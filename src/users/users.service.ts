@@ -52,12 +52,32 @@ export class UsersService {
 
     const updateData: any = { ...dto };
 
+    if (dto.email && dto.email !== user.email) {
+      const emailExists = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (emailExists) {
+        throw new ConflictException(
+          'O e-mail informado já está em uso por outra conta.',
+        );
+      }
+    }
+
     if (dto.password || dto.confirmPassword) {
-      if (dto.password !== dto.confirmPassword) {
+      if (
+        !dto.password ||
+        !dto.confirmPassword ||
+        dto.password !== dto.confirmPassword
+      ) {
         throw new BadRequestException(
           'A senha e a confirmação de senha não coincidem.',
         );
       }
+
+      const saltOrRounds = 10;
+      updateData.password = await bcrypt.hash(dto.password, saltOrRounds);
+
       delete updateData.confirmPassword;
     }
 
