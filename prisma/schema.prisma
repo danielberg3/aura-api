@@ -17,23 +17,31 @@ model News {
 }
 
 model User {
-  id String @id @default(uuid())
+  id        String            @id @default(uuid())
   name      String
-  email     String   @unique
+  email     String            @unique
   password  String
   birthdate DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
   medicines MedicineRoutine[]
 }
 
 model MedicineRoutine {
-  id            String   @id @default(uuid())
+  id            String             @id @default(uuid())
   userId        String
   name          String
   dose          String
   intervalHours Int
   startTime     DateTime
-  isActive      Boolean  @default(true)
-  user          User     @relation(fields: [userId], references: [id])
+  isActive      Boolean            @default(true)
+  user          User               @relation(fields: [userId], references: [id])
+  schedules     MedicineSchedule[]
+}
+
+model MedicineSchedule {
+  id                String          @id @default(uuid())
+  medicineRoutineId String
+  time              DateTime
+  routine           MedicineRoutine @relation(fields: [medicineRoutineId], references: [id])
 }
