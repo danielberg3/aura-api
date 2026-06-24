@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -26,12 +27,16 @@ export class UsersService {
       throw new ConflictException('O e-mail informado já está em uso.');
     }
 
+    const saltOrRounds = 10;
+    const hashedPassword = await bcrypt.hash(dto.password, saltOrRounds);
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { confirmPassword, ...userData } = dto;
+    const { confirmPassword, password, ...userData } = dto;
 
     return this.prisma.user.create({
       data: {
         ...userData,
+        password: hashedPassword,
         birthdate: new Date(dto.birthdate),
       },
     });
@@ -44,10 +49,26 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    await this.findOne(id);
+    const user = await this.findOne(id);
+
+    if (dto.email && dto.email !== user.email) {
+      const emailExists = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (emailExists) {
+        throw new ConflictException(
+          'O e-mail informado já está em uso por outra conta.',
+        );
+      }
+    }
 
     if (dto.password || dto.confirmPassword) {
-      if (dto.password !== dto.confirmPassword) {
+      if (
+        !dto.password ||
+        !dto.confirmPassword ||
+        dto.password !== dto.confirmPassword
+      ) {
         throw new BadRequestException(
           'A senha e a confirmação de senha não coincidem.',
         );
@@ -55,10 +76,17 @@ export class UsersService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { confirmPassword, ...updateFields } = dto;
+    const { confirmPassword, password, ...updateFields } = dto;
+
+    let hashedPassword: string | undefined = undefined;
+    if (dto.password) {
+      const saltOrRounds = 10;
+      hashedPassword = await bcrypt.hash(dto.password, saltOrRounds);
+    }
 
     const data = {
       ...updateFields,
+      password: hashedPassword,
       birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
     };
 

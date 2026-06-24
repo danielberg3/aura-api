@@ -21,6 +21,7 @@ async function bootstrap() {
     .setDescription(
       'API para gerenciamento de notícias relacionadas à saúde e medicina',
     )
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
