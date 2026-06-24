@@ -10,9 +10,7 @@ export class MedicinesService {
     const startTime = new Date(createMedicineDto.startTime);
     const intervalHours = createMedicineDto.intervalHours;
     
-    // CORREÇÃO: Tipagem explícita adicionada aqui
     const schedules: { time: Date }[] = []; 
-    
     const dosesCount = Math.floor((24 / intervalHours) * 30); 
     let currentTime = new Date(startTime);
 
@@ -21,6 +19,7 @@ export class MedicinesService {
       currentTime.setHours(currentTime.getHours() + intervalHours);
     }
 
+    // Criamos no banco, mas NÃO incluímos os 720 schedules no retorno para não pesar a API
     return this.prisma.medicineRoutine.create({
       data: {
         userId,
@@ -31,9 +30,6 @@ export class MedicinesService {
         schedules: {
           create: schedules,
         },
-      },
-      include: {
-        schedules: true,
       }
     });
   }
@@ -56,9 +52,15 @@ export class MedicinesService {
       },
       include: { 
         schedules: {
+          where: {
+            time: {
+              gte: new Date(), // Retorna apenas as doses de agora em diante (ignora as que já passaram)
+            }
+          },
           orderBy: {
             time: 'asc'
-          }
+          },
+          take: 10 // Limita para trazer apenas as próximas 10 doses no detalhamento
         } 
       },
     });
