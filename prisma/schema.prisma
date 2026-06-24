@@ -24,4 +24,16 @@ model User {
   birthdate DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  medicines MedicineRoutine[]
+}
+
+model MedicineRoutine {
+  id            String   @id @default(uuid())
+  userId        String
+  name          String
+  dose          String
+  intervalHours Int
+  startTime     DateTime
+  isActive      Boolean  @default(true)
+  user          User     @relation(fields: [userId], references: [id])
 }
