@@ -1,4 +1,9 @@
-import { IsString, IsNotEmpty, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateExamDto {
@@ -28,11 +33,13 @@ export class CreateExamDto {
 
   @ApiProperty({
     example: 'https://exemplo.com/imagens/exame123.jpg',
-    description: 'URL ou representação em string da imagem do exame',
+    description:
+      'URL ou representação em string da imagem do exame (preenchida automaticamente via upload)',
+    required: false,
   })
   @IsString()
-  @IsNotEmpty({ message: 'A imagem do exame é obrigatória.' })
-  examImage!: string;
+  @IsOptional()
+  examImage?: string;
 
   @ApiProperty({
     example: 'user-uuid-1234',

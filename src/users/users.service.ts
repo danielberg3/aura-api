@@ -38,9 +38,7 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id, deletedAt: null },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Usuário não encontrado.');
     return user;
   }
@@ -68,21 +66,5 @@ export class UsersService {
       where: { id },
       data,
     });
-  }
-
-  async remove(id: string) {
-    await this.findOne(id);
-
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-
-    await this.prisma.exam.updateMany({
-      where: { userId: id, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
-
-    return user;
   }
 }

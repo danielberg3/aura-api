@@ -1,32 +1,50 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateExamDto } from './dto/create-exam.dto';
-import { UpdateExamDto } from './dto/update-exam.dto';
+import { StorageService, R2File } from './storage.service';
 
 @Injectable()
 export class ExamsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
-  async create(dto: CreateExamDto) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: dto.userId, deletedAt: null },
+  async create(dto: CreateExamDto, file?: R2File) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
     });
 
     if (!user) {
       throw new NotFoundException('Usuário não encontrado.');
     }
 
+    let imageUrl = dto.examImage;
+
+    if (file) {
+      imageUrl = await this.storageService.uploadFile(file);
+    }
+
+    if (!imageUrl) {
+      throw new BadRequestException('A imagem do exame é obrigatória.');
+    }
+
     return this.prisma.exam.create({
       data: {
         ...dto,
+        examImage: imageUrl,
         examDate: new Date(dto.examDate),
       },
     });
   }
 
   async findAllByUser(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
     });
 
     if (!user) {
@@ -34,14 +52,14 @@ export class ExamsService {
     }
 
     return this.prisma.exam.findMany({
-      where: { userId, deletedAt: null },
+      where: { userId },
       orderBy: { examDate: 'desc' },
     });
   }
 
   async findOne(id: string) {
-    const exam = await this.prisma.exam.findFirst({
-      where: { id, deletedAt: null, user: { deletedAt: null } },
+    const exam = await this.prisma.exam.findUnique({
+      where: { id },
       include: {
         user: {
           select: {
@@ -58,28 +76,5 @@ export class ExamsService {
     }
 
     return exam;
-  }
-
-  async update(id: string, dto: UpdateExamDto) {
-    await this.findOne(id);
-
-    const data = {
-      ...dto,
-      examDate: dto.examDate ? new Date(dto.examDate) : undefined,
-    };
-
-    return this.prisma.exam.update({
-      where: { id },
-      data,
-    });
-  }
-
-  async remove(id: string) {
-    await this.findOne(id);
-
-    return this.prisma.exam.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
   }
 }

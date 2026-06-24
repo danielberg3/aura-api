@@ -30,15 +30,26 @@ interface ErrorResponse {
   statusCode?: number;
 }
 
+import { StorageService } from './../src/exams/storage.service';
+
 describe('Exams (e2e)', () => {
   let app: INestApplication<App>;
   let userId: string;
   let examId: string;
 
   beforeAll(async () => {
+    const mockStorageService = {
+      uploadFile: jest
+        .fn()
+        .mockResolvedValue('https://exemplo.com/imagens/exam_mock.jpg'),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StorageService)
+      .useValue(mockStorageService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
@@ -94,6 +105,24 @@ describe('Exams (e2e)', () => {
       expect(examBody.userId).toBe(userId);
 
       examId = examBody.id;
+    });
+
+    it('deve cadastrar um novo exame enviando um arquivo multipart com sucesso', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/exams')
+        .attach('file', Buffer.from('mock image data'), 'test_image.jpg')
+        .field('examName', 'Ultrassom Abdominal')
+        .field('examDate', '2026-06-24T12:00:00.000Z')
+        .field('examDescription', 'Exame de rotina do abdômen.')
+        .field('userId', userId)
+        .expect(201);
+
+      const examBody = response.body as ExamResponse;
+      expect(examBody).toHaveProperty('id');
+      expect(examBody.examName).toBe('Ultrassom Abdominal');
+      expect(examBody.examImage).toBe(
+        'https://exemplo.com/imagens/exam_mock.jpg',
+      );
     });
 
     it('deve retornar 404 ao cadastrar exame com userId inexistente', async () => {
@@ -187,99 +216,6 @@ describe('Exams (e2e)', () => {
 
       const errorBody = response.body as ErrorResponse;
       expect(errorBody.message).toBe('Exame não encontrado.');
-    });
-  });
-
-  describe('PUT /exams/:id (Atualização de Exame)', () => {
-    it('deve atualizar os dados de um exame com sucesso', async () => {
-      const updateData = {
-        examName: 'Ressonância Magnética Alterada',
-        examDescription: 'Nova descrição do exame de imagem.',
-      };
-
-      const response = await request(app.getHttpServer())
-        .put(`/exams/${examId}`)
-        .send(updateData)
-        .expect(200);
-
-      const examBody = response.body as ExamResponse;
-      expect(examBody.examName).toBe(updateData.examName);
-      expect(examBody.examDescription).toBe(updateData.examDescription);
-    });
-
-    it('deve retornar 404 ao atualizar exame inexistente', async () => {
-      await request(app.getHttpServer())
-        .put('/exams/00000000-0000-0000-0000-000000000000')
-        .send({ examName: 'Novo Nome' })
-        .expect(404);
-    });
-  });
-
-  describe('Soft-delete', () => {
-    it('deve deletar logicamente (soft-delete) um exame com sucesso', async () => {
-      // Soft-delete the exam
-      await request(app.getHttpServer()).delete(`/exams/${examId}`).expect(200);
-
-      // Verify the exam is no longer accessible via details
-      await request(app.getHttpServer()).get(`/exams/${examId}`).expect(404);
-
-      // Verify the exam is no longer accessible via list
-      const responseList = await request(app.getHttpServer())
-        .get(`/exams?userId=${userId}`)
-        .expect(200);
-
-      const examsList = responseList.body as ExamResponse[];
-      const foundExam = examsList.find((e) => e.id === examId);
-      expect(foundExam).toBeUndefined();
-    });
-
-    it('deve deletar logicamente (soft-delete) um usuário e seus exames com sucesso', async () => {
-      // Register a new user and an exam for them
-      const userRes = await request(app.getHttpServer())
-        .post('/users')
-        .send({
-          name: 'Bob Ross',
-          email: `bob.ross.${Date.now()}@example.com`,
-          password: 'Password123',
-          confirmPassword: 'Password123',
-          birthdate: '1985-05-05',
-        });
-      const bobId = (userRes.body as UserResponse).id;
-
-      const examRes = await request(app.getHttpServer()).post('/exams').send({
-        examName: 'Hemograma Bob',
-        examDate: '2026-06-24T10:00:00.000Z',
-        examDescription: 'Sangue.',
-        examImage: 'https://exemplo.com/sangue.jpg',
-        userId: bobId,
-      });
-      const bobExamId = (examRes.body as ExamResponse).id;
-
-      // Soft-delete Bob
-      await request(app.getHttpServer()).delete(`/users/${bobId}`).expect(200);
-
-      // Verify Bob Ross is no longer findable (404)
-      await request(app.getHttpServer()).get(`/users/${bobId}`).expect(404);
-
-      // Verify Bob's exam is no longer findable (404)
-      await request(app.getHttpServer()).get(`/exams/${bobExamId}`).expect(404);
-
-      // Verify Bob's exam list returns 404 because user is deleted
-      await request(app.getHttpServer())
-        .get(`/exams?userId=${bobId}`)
-        .expect(404);
-
-      // Verify we cannot register new exams for Bob (404)
-      await request(app.getHttpServer())
-        .post('/exams')
-        .send({
-          examName: 'Outro Exame',
-          examDate: '2026-06-24T10:00:00.000Z',
-          examDescription: 'Sangue.',
-          examImage: 'https://exemplo.com/sangue.jpg',
-          userId: bobId,
-        })
-        .expect(404);
     });
   });
 });

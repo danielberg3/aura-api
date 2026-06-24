@@ -6,8 +6,8 @@ import {
   Param,
   Query,
   BadRequestException,
-  Put,
-  Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,10 +15,12 @@ import {
   ApiResponse,
   ApiQuery,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
-import { UpdateExamDto } from './dto/update-exam.dto';
+import { R2File } from './storage.service';
 
 @ApiTags('Exames')
 @Controller('exams')
@@ -26,12 +28,38 @@ export class ExamsController {
   constructor(private readonly examsService: ExamsService) {}
 
   @Post()
+  @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({
     summary: 'Cadastrar um novo exame',
     description:
-      'Cria um novo registro de exame laboratorial ou de imagem vinculado ao usuário informado.',
+      'Cria um novo registro de exame laboratorial ou de imagem vinculado ao usuário informado, fazendo upload da imagem para o Cloudflare R2.',
   })
-  @ApiBody({ type: CreateExamDto })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        examName: { type: 'string', description: 'Nome do exame' },
+        examDate: {
+          type: 'string',
+          format: 'date-time',
+          description:
+            'Data de realização do exame no formato ISO Date (Ex: 2026-06-24T14:00:00Z)',
+        },
+        examDescription: {
+          type: 'string',
+          description: 'Descrição ou observações do exame',
+        },
+        userId: { type: 'string', description: 'ID do usuário proprietário' },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Arquivo de imagem ou anexo do exame',
+        },
+      },
+      required: ['examName', 'examDate', 'examDescription', 'userId', 'file'],
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Exame cadastrado com sucesso.',
@@ -40,8 +68,8 @@ export class ExamsController {
     status: 404,
     description: 'Usuário não encontrado.',
   })
-  create(@Body() createExamDto: CreateExamDto) {
-    return this.examsService.create(createExamDto);
+  create(@UploadedFile() file: R2File, @Body() createExamDto: CreateExamDto) {
+    return this.examsService.create(createExamDto, file);
   }
 
   @Get()
@@ -90,40 +118,5 @@ export class ExamsController {
   })
   findOne(@Param('id') id: string) {
     return this.examsService.findOne(id);
-  }
-
-  @Put(':id')
-  @ApiOperation({
-    summary: 'Atualizar um exame pelo ID',
-    description: 'Atualiza um ou mais campos de um exame ativo específico.',
-  })
-  @ApiBody({ type: UpdateExamDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Exame atualizado com sucesso.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Exame não encontrado.',
-  })
-  update(@Param('id') id: string, @Body() updateExamDto: UpdateExamDto) {
-    return this.examsService.update(id, updateExamDto);
-  }
-
-  @Delete(':id')
-  @ApiOperation({
-    summary: 'Remover (soft-delete) um exame pelo ID',
-    description: 'Marca um exame específico como deletado logicamente.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Exame removido com sucesso.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Exame não encontrado.',
-  })
-  remove(@Param('id') id: string) {
-    return this.examsService.remove(id);
   }
 }

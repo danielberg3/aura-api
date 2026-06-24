@@ -24,7 +24,6 @@ model User {
   birthdate DateTime
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
   exams     Exam[]
 }
 
@@ -38,6 +37,5 @@ model Exam {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
 }
 
