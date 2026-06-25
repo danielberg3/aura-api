@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -26,11 +27,15 @@ export class UsersService {
       throw new ConflictException('O e-mail informado já está em uso.');
     }
 
-    const { confirmPassword, ...userData } = dto;
+    const saltOrRounds = 10;
+    const hashedPassword = await bcrypt.hash(dto.password, saltOrRounds);
+
+    const { confirmPassword, password, ...userData } = dto;
 
     return this.prisma.user.create({
       data: {
         ...userData,
+        password: hashedPassword,
         birthdate: new Date(dto.birthdate),
       },
     });
@@ -47,12 +52,32 @@ export class UsersService {
 
     const updateData: any = { ...dto };
 
+    if (dto.email && dto.email !== user.email) {
+      const emailExists = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (emailExists) {
+        throw new ConflictException(
+          'O e-mail informado já está em uso por outra conta.',
+        );
+      }
+    }
+
     if (dto.password || dto.confirmPassword) {
-      if (dto.password !== dto.confirmPassword) {
+      if (
+        !dto.password ||
+        !dto.confirmPassword ||
+        dto.password !== dto.confirmPassword
+      ) {
         throw new BadRequestException(
           'A senha e a confirmação de senha não coincidem.',
         );
       }
+
+      const saltOrRounds = 10;
+      updateData.password = await bcrypt.hash(dto.password, saltOrRounds);
+
       delete updateData.confirmPassword;
     }
 

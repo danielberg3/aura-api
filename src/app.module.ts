@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { MedicinesModule } from './medicines/medicines.module';
 
 @Module({
+  imports: [NewsModule, UsersModule, AuthModule],
   imports: [NewsModule, UsersModule, MedicinesModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
