@@ -43,15 +43,6 @@ export class UsersController {
     return result;
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Buscar um usuário pelo ID' })
-  async findOne(@Param('id') id: string) {
-    const user = await this.usersService.findOne(id);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...result } = user;
-    return result;
-  }
-
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('me')
