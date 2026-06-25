@@ -17,29 +17,27 @@ model News {
 }
 
 model User {
-  id        String            @id @default(uuid())
-  name      String
-  email     String            @unique
-  password  String
-  birthdate DateTime
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  medicines MedicineRoutine[]
-  exams     Exam[]
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password         String
+  birthdate        DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  exams            Exam[]
+  medicineRoutines MedicineRoutine[]
 }
 
 model Exam {
-  id                 String            @id @default(uuid())
-  examName           String
-  examDate           DateTime
-  examDescription    String
-  examImage          String
-  userId             String
-  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  medicineSchedule   MedicineSchedule? @relation(fields: [medicineScheduleId], references: [id])
-  medicineScheduleId String?
+  id              String   @id @default(uuid())
+  examName        String
+  examDate        DateTime
+  examDescription String
+  examImage       String
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model MedicineRoutine {
@@ -61,5 +59,4 @@ model MedicineSchedule {
   routine           MedicineRoutine @relation(fields: [medicineRoutineId], references: [id])
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-  exams             Exam[]
 }
