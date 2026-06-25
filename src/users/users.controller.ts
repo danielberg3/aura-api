@@ -15,10 +15,18 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Request } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: string;
+    email: string;
+  };
+}
 
 @ApiTags('Usuários')
 @Controller('users')
@@ -30,6 +38,16 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso.' })
   async create(@Body() createUserDto: CreateUserDto) {
     const user = await this.usersService.create(createUserDto);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...result } = user;
+    return result;
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Buscar um usuário pelo ID' })
+  async findOne(@Param('id') id: string) {
+    const user = await this.usersService.findOne(id);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
     return result;
   }
@@ -46,9 +64,10 @@ export class UsersController {
     status: 401,
     description: 'Não autorizado ou token inválido.',
   })
-  async findMe(@Req() req: any) {
+  async findMe(@Req() req: AuthenticatedRequest) {
     const userId = req.user.sub;
     const user = await this.usersService.findOne(userId);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
     return result;
   }
@@ -73,7 +92,7 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     if (req.user.sub !== id) {
       throw new ForbiddenException(
@@ -82,6 +101,7 @@ export class UsersController {
     }
 
     const user = await this.usersService.update(id, updateUserDto);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
     return result;
   }

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -18,9 +12,7 @@ import { CreateNewsDto } from './dto/create-news.dto';
 @ApiTags('Notícias Médicas')
 @Controller('news')
 export class NewsController {
-  constructor(
-    private readonly newsService: NewsService,
-  ) {}
+  constructor(private readonly newsService: NewsService) {}
 
   @Post()
   @ApiOperation({
@@ -33,9 +25,7 @@ export class NewsController {
     status: 201,
     description: 'Notícia criada com sucesso',
   })
-  create(
-    @Body() createNewsDto: CreateNewsDto,
-  ) {
+  create(@Body() createNewsDto: CreateNewsDto) {
     return this.newsService.create(createNewsDto);
   }
 
@@ -61,13 +51,7 @@ export class NewsController {
     status: 200,
     description: 'Lista de notícias retornada com sucesso',
   })
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.newsService.findAll(
-      Number(page) || 1,
-      Number(limit) || 10,
-    );
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.newsService.findAll(Number(page) || 1, Number(limit) || 10);
   }
 }
