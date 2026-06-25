@@ -19,7 +19,7 @@ export class MedicinesService {
       currentTime.setHours(currentTime.getHours() + intervalHours);
     }
 
-    // Criamos no banco, mas NÃO incluímos os 720 schedules no retorno para não pesar a API
+
     return this.prisma.medicineRoutine.create({
       data: {
         userId,
@@ -54,13 +54,13 @@ export class MedicinesService {
         schedules: {
           where: {
             time: {
-              gte: new Date(), // Retorna apenas as doses de agora em diante (ignora as que já passaram)
+              gte: new Date(), 
             }
           },
           orderBy: {
             time: 'asc'
           },
-          take: 10 // Limita para trazer apenas as próximas 10 doses no detalhamento
+          take: 10 
         } 
       },
     });
