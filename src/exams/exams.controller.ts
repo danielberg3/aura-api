@@ -8,6 +8,7 @@ import {
   BadRequestException,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,13 +17,17 @@ import {
   ApiQuery,
   ApiBody,
   ApiConsumes,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { R2File } from './storage.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Exames')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('exams')
 export class ExamsController {
   constructor(private readonly examsService: ExamsService) {}

@@ -36,6 +36,7 @@ describe('Exams (e2e)', () => {
   let app: INestApplication<App>;
   let userId: string;
   let examId: string;
+  let accessToken: string;
 
   beforeAll(async () => {
     const mockStorageService = {
@@ -76,6 +77,16 @@ describe('Exams (e2e)', () => {
 
     const userBody = userResponse.body as UserResponse;
     userId = userBody.id;
+
+    // Log in to obtain access token
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email: uniqueEmail,
+        password: 'Password123',
+      });
+    const loginBody = loginResponse.body as { accessToken: string };
+    accessToken = loginBody.accessToken;
   });
 
   afterAll(async () => {
@@ -83,6 +94,10 @@ describe('Exams (e2e)', () => {
   });
 
   describe('POST /exams (Cadastro de Exame)', () => {
+    it('deve retornar 401 ao cadastrar exame sem autenticação', async () => {
+      await request(app.getHttpServer()).post('/exams').send({}).expect(401);
+    });
+
     it('deve cadastrar um novo exame com sucesso', async () => {
       const examData = {
         examName: 'Ressonância Magnética',
@@ -94,6 +109,7 @@ describe('Exams (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/exams')
+        .set('Authorization', `Bearer ${accessToken}`)
         .send(examData)
         .expect(201);
 
@@ -110,6 +126,7 @@ describe('Exams (e2e)', () => {
     it('deve cadastrar um novo exame enviando um arquivo multipart com sucesso', async () => {
       const response = await request(app.getHttpServer())
         .post('/exams')
+        .set('Authorization', `Bearer ${accessToken}`)
         .attach('file', Buffer.from('mock image data'), 'test_image.jpg')
         .field('examName', 'Ultrassom Abdominal')
         .field('examDate', '2026-06-24T12:00:00.000Z')
@@ -136,6 +153,7 @@ describe('Exams (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/exams')
+        .set('Authorization', `Bearer ${accessToken}`)
         .send(examData)
         .expect(404);
 
@@ -151,15 +169,21 @@ describe('Exams (e2e)', () => {
 
       await request(app.getHttpServer())
         .post('/exams')
+        .set('Authorization', `Bearer ${accessToken}`)
         .send(examData)
         .expect(400);
     });
   });
 
   describe('GET /exams (Listagem de Exames)', () => {
+    it('deve retornar 401 ao listar exames sem autenticação', async () => {
+      await request(app.getHttpServer()).get('/exams').expect(401);
+    });
+
     it('deve listar os exames do usuário com sucesso', async () => {
       const response = await request(app.getHttpServer())
         .get(`/exams?userId=${userId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
       const examsList = response.body as ExamResponse[];
@@ -174,6 +198,7 @@ describe('Exams (e2e)', () => {
     it('deve retornar 400 se userId não for fornecido na query', async () => {
       const response = await request(app.getHttpServer())
         .get('/exams')
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(400);
 
       const errorBody = response.body as ErrorResponse;
@@ -183,6 +208,7 @@ describe('Exams (e2e)', () => {
     it('deve retornar 404 se userId fornecido não existir', async () => {
       const response = await request(app.getHttpServer())
         .get('/exams?userId=00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(404);
 
       const errorBody = response.body as ErrorResponse;
@@ -191,9 +217,14 @@ describe('Exams (e2e)', () => {
   });
 
   describe('GET /exams/:id (Detalhamento de Exame)', () => {
+    it('deve retornar 401 ao detalhar exame sem autenticação', async () => {
+      await request(app.getHttpServer()).get('/exams/some-id').expect(401);
+    });
+
     it('deve retornar os detalhes de um exame específico', async () => {
       const response = await request(app.getHttpServer())
         .get(`/exams/${examId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
       const examBody = response.body as ExamResponse;
@@ -212,6 +243,7 @@ describe('Exams (e2e)', () => {
     it('deve retornar 404 para exame não existente', async () => {
       const response = await request(app.getHttpServer())
         .get('/exams/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(404);
 
       const errorBody = response.body as ErrorResponse;
