@@ -17,15 +17,13 @@ import {
 } from '@nestjs/swagger';
 import { NewsService } from './news.service';
 import { CreateNewsDto } from './dto/create-news.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Notícias Médicas')
 @ApiBearerAuth()
 @Controller('news')
 export class NewsController {
-  constructor(
-    private readonly newsService: NewsService,
-  ) {}
+  constructor(private readonly newsService: NewsService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -70,13 +68,7 @@ export class NewsController {
     status: 200,
     description: 'Lista de notícias retornada com sucesso',
   })
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.newsService.findAll(
-      Number(page) || 1,
-      Number(limit) || 10,
-    );
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.newsService.findAll(Number(page) || 1, Number(limit) || 10);
   }
 }
