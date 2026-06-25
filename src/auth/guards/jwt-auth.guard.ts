@@ -7,12 +7,16 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
+interface RequestWithUser extends Request {
+  user?: any;
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(private readonly jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
@@ -20,11 +24,14 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET || 'chave-secreta-muito-segura',
-      });
+      const payload = await this.jwtService.verifyAsync<Record<string, any>>(
+        token,
+        {
+          secret: process.env.JWT_SECRET || 'chave-secreta-muito-segura',
+        },
+      );
 
-      request['user'] = payload;
+      request.user = payload;
     } catch {
       throw new UnauthorizedException('Token de acesso inválido ou expirado.');
     }

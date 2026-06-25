@@ -44,4 +44,20 @@ model MedicineSchedule {
   medicineRoutineId String
   time              DateTime
   routine           MedicineRoutine @relation(fields: [medicineRoutineId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  exams     Exam[]
 }
+
+model Exam {
+  id              String    @id @default(uuid())
+  examName        String
+  examDate        DateTime
+  examDescription String
+  examImage       String
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+

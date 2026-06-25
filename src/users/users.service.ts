@@ -30,6 +30,7 @@ export class UsersService {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(dto.password, saltOrRounds);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { confirmPassword, password, ...userData } = dto;
 
     return this.prisma.user.create({
@@ -49,8 +50,6 @@ export class UsersService {
 
   async update(id: string, dto: UpdateUserDto) {
     const user = await this.findOne(id);
-
-    const updateData: any = { ...dto };
 
     if (dto.email && dto.email !== user.email) {
       const emailExists = await this.prisma.user.findUnique({
@@ -74,20 +73,26 @@ export class UsersService {
           'A senha e a confirmação de senha não coincidem.',
         );
       }
+    }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { confirmPassword, password, ...updateFields } = dto;
+
+    let hashedPassword: string | undefined = undefined;
+    if (dto.password) {
       const saltOrRounds = 10;
-      updateData.password = await bcrypt.hash(dto.password, saltOrRounds);
-
-      delete updateData.confirmPassword;
+      hashedPassword = await bcrypt.hash(dto.password, saltOrRounds);
     }
 
-    if (dto.birthdate) {
-      updateData.birthdate = new Date(dto.birthdate);
-    }
+    const data = {
+      ...updateFields,
+      password: hashedPassword,
+      birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
+    };
 
     return this.prisma.user.update({
       where: { id },
-      data: updateData,
+      data,
     });
   }
 }

@@ -1,19 +1,7 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsDateString,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateNewsDto {
-  @ApiProperty({
-    example: 'medico-123',
-    description: 'Identificador do profissional ou autor da notícia',
-  })
-  @IsString()
-  @IsNotEmpty()
-  authorId!: string;
-
   @ApiProperty({
     example:
       'Novo estudo aponta benefícios da atividade física para a saúde cardiovascular',
