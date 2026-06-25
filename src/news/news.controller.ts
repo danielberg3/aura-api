@@ -1,19 +1,31 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiQuery,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { NewsService } from './news.service';
 import { CreateNewsDto } from './dto/create-news.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Notícias Médicas')
+@ApiBearerAuth()
 @Controller('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({
     summary: 'Cadastrar notícia médica',
@@ -25,10 +37,15 @@ export class NewsController {
     status: 201,
     description: 'Notícia criada com sucesso',
   })
-  create(@Body() createNewsDto: CreateNewsDto) {
-    return this.newsService.create(createNewsDto);
+  create(
+    @Body() createNewsDto: CreateNewsDto,
+    @Req() req: any
+  ) {
+    const authorId = req.user.sub;
+    return this.newsService.create(createNewsDto, authorId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
     summary: 'Listar notícias médicas',

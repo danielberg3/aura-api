@@ -6,11 +6,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export class NewsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createNewsDto: CreateNewsDto) {
+  async create(createNewsDto: CreateNewsDto, authorId: string) {
     return await this.prisma.news.create({
       data: {
         ...createNewsDto,
         publishedAt: new Date(createNewsDto.publishedAt),
+        authorId: authorId
       },
     });
   }
