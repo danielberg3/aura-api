@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Param, Delete, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MedicinesService } from './medicines.service';
 import { CreateMedicineDto } from './dto/create-medicine.dto';
 
 @ApiTags('medicines')
-@ApiBearerAuth() 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('medicines')
 export class MedicinesController {
   constructor(private readonly medicinesService: MedicinesService) {}
@@ -13,7 +15,7 @@ export class MedicinesController {
   @ApiOperation({ summary: 'Cadastrar uma nova rotina medicamentosa' })
   @ApiResponse({
     status: 201,
-    description: 'Rotina medicamentosa criada com sucesso e cronograma calculado.',
+    description: 'Rotina medicamentosa criada com sucesso.',
     schema: {
       example: {
         id: "fe050f92-3eae-460c-9f06-a54cca8a7f0b",
@@ -27,7 +29,7 @@ export class MedicinesController {
     }
   })
   create(@Body() createMedicineDto: CreateMedicineDto, @Req() req: any) {
-    const userId = req.user?.id || req.user?.sub; 
+    const userId = req.user?.id || req.user?.sub;
     return this.medicinesService.create(userId, createMedicineDto);
   }
 
