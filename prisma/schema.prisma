@@ -17,25 +17,46 @@ model News {
 }
 
 model User {
-  id String @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  birthdate DateTime
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  exams     Exam[]
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password         String
+  birthdate        DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  exams            Exam[]
+  medicineRoutines MedicineRoutine[]
 }
 
 model Exam {
-  id              String    @id @default(uuid())
+  id              String   @id @default(uuid())
   examName        String
   examDate        DateTime
   examDescription String
   examImage       String
   userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
+model MedicineRoutine {
+  id            String             @id @default(uuid())
+  userId        String
+  name          String
+  dose          String
+  intervalHours Int
+  startTime     DateTime
+  isActive      Boolean            @default(true)
+  user          User               @relation(fields: [userId], references: [id])
+  schedules     MedicineSchedule[]
+}
+
+model MedicineSchedule {
+  id                String          @id @default(uuid())
+  medicineRoutineId String
+  time              DateTime
+  routine           MedicineRoutine @relation(fields: [medicineRoutineId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
